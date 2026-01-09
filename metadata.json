@@ -1,0 +1,8 @@
+{
+  "name": "ReportRelief",
+  "description": "Professional student reports powered by AI for modern teachers.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

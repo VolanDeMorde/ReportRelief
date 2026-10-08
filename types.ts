@@ -1,27 +1,26 @@
-
-export enum Sentiment {
-  POSITIVE = 'Positive',
-  NEUTRAL = 'Neutral',
-  NEGATIVE = 'Negative'
+export enum Focus {
+  STRENGTHS = 'Strengths & Achievements',
+  BALANCED = 'Balanced Overview',
+  GROWTH = 'Growth Areas & Support',
 }
 
 export enum Gender {
   MALE = 'Male',
   FEMALE = 'Female',
-  NEUTRAL = 'Non-binary/Neutral'
+  NEUTRAL = 'Non-binary/Neutral',
 }
 
 export enum ReportTone {
   FORMAL = 'Formal',
   FRIENDLY = 'Friendly',
   ACADEMIC = 'Academic',
-  NURTURING = 'NURTURING'
+  NURTURING = 'Nurturing',
 }
 
 export enum ReportLength {
   SHORT = 'Short',
   MEDIUM = 'Medium',
-  LONG = 'Long'
+  LONG = 'Long',
 }
 
 export enum YearGroup {
@@ -39,22 +38,23 @@ export enum YearGroup {
   YEAR_10 = 'Year 10',
   YEAR_11 = 'Year 11',
   YEAR_12 = 'Year 12',
-  YEAR_13 = 'Year 13'
+  YEAR_13 = 'Year 13',
 }
 
 export enum Curriculum {
   UK_NATIONAL = 'UK National',
   US_COMMON_CORE = 'Common Core',
   IB_PYP = 'IB PYP',
-  GENERAL = 'General'
+  GENERAL = 'General',
 }
 
 export interface StudentInput {
   name: string;
   year: YearGroup;
   gradeLevel?: string; // e.g. "3B" or "Red Class"
+  classGroup?: string; // e.g. "Class 5B" or "Science-A"
   gender: Gender;
-  sentiment: Sentiment;
+  focus: Focus;
   subject: string;
   details: string;
   tone: ReportTone;
@@ -63,7 +63,21 @@ export interface StudentInput {
   language: string;
   targetMark?: number;
   imageEvidence?: string; // base64 (work analysis)
-  studentPhoto?: string;  // base64 (profile photo)
+  studentPhoto?: string; // base64 (profile photo)
+  includeActionPlan?: boolean;
+}
+
+export interface FormPreset {
+  id: string;
+  presetName: string;
+  year: YearGroup;
+  subject: string;
+  tone: ReportTone;
+  length: ReportLength;
+  curriculum: Curriculum;
+  focus: Focus;
+  language: string;
+  classGroup?: string;
 }
 
 export interface GeneratedReport {
@@ -71,6 +85,7 @@ export interface GeneratedReport {
   studentName: string;
   year: YearGroup;
   gradeLevel?: string;
+  classGroup?: string;
   subject: string;
   mark: number;
   reportText: string;
@@ -80,4 +95,7 @@ export interface GeneratedReport {
   timestamp: number;
   language: string;
   studentPhoto?: string;
+  parentSummary?: string;
+  deletedAt?: number | null;
+  deleteAfter?: number | null;
 }

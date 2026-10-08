@@ -1,0 +1,7 @@
+# Prettier also honours .gitignore
+backups/
+dist/
+coverage/
+functions/lib/
+package-lock.json
+functions/package-lock.json

@@ -1,0 +1,10 @@
+# Keep LF line endings in the working copy on every OS. Prettier enforces LF
+# (.prettierrc "endOfLine": "lf"), so CRLF checkouts on Windows would fail
+# `npm run format:check` / `npm run check`.
+* text=auto eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

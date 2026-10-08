@@ -1,16 +1,15 @@
-
 {
   "short_name": "ReportRelief",
   "name": "ReportRelief: Professional Student Reports",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1063/1063376.png",
-      "type": "image/png",
-      "sizes": "512x512",
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
       "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "theme_color": "#6366f1",
   "background_color": "#ffffff"

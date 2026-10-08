@@ -1,77 +1,85 @@
+import { StudentInput } from '../types';
+import { auth } from '../firebase';
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { StudentInput } from "../types";
-
-export const generateStudentReport = async (input: StudentInput): Promise<{ mark: number; reportText: string; actionPlan: string[] }> => {
-  // Use the direct process.env.API_KEY as per guidelines
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  const systemInstruction = `
-    You are an expert Teacher. Write a professional student report for the subject: ${input.subject}.
-    
-    STUDENT GENDER: ${input.gender}. 
-    CRITICAL: Use correct pronouns for ${input.gender} throughout the report (he/she/they).
-    
-    YEAR GROUP: ${input.year} ${input.gradeLevel ? `(Class: ${input.gradeLevel})` : ''}
-    Note: For Year 7 and above, ensure the language reflects secondary/high school academic rigor. 
-    For Nursery and Reception, use nurturing and development-focused language.
-    
-    CURRICULUM: ${input.curriculum} Terminology.
-    TONE: ${input.tone}
-    LENGTH: ${input.length} (Short: 1 para, Medium: 2 paras, Long: 3 paras + details)
-    LANGUAGE: Output the final report in ${input.language}.
-    
-    TARGET MARK: ${input.targetMark !== undefined ? `${input.targetMark}%` : "Generate an appropriate mark based on observations."}
-    If a TARGET MARK is provided, you MUST use that value for the 'mark' property in the JSON.
-    
-    Formatting Rules:
-    - Use Markdown for emphasis (bolding keywords).
-    - If sentiment is Negative, use professional "growth-oriented" language.
-    - Provide a list of 3 specific "Action Plan" items for improvement.
-    
-    Output JSON only.
-  `;
-
-  const promptParts: any[] = [
-    { text: `Name: ${input.name}, Year: ${input.year}, Class ID: ${input.gradeLevel || 'N/A'}, Subject: ${input.subject}, Sentiment: ${input.sentiment}, Observations: ${input.details}` }
-  ];
-
-  if (input.imageEvidence) {
-    promptParts.push({
-      inlineData: {
-        mimeType: "image/jpeg",
-        data: input.imageEvidence.split(',')[1]
-      }
-    });
-    promptParts[0].text += " Also analyze the attached image of the student's work to provide specific feedback.";
+/** A failed generation request; `status` is the HTTP status (e.g. 429 = monthly limit reached). */
+export class ReportGenerationError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number
+  ) {
+    super(message);
+    this.name = 'ReportGenerationError';
   }
+}
 
+const NETWORK_ERROR_MESSAGE =
+  "We're having trouble generating this report right now. Please check your internet connection and try again in a moment.";
+
+export type ReportResponse = { mark: number; reportText: string; actionPlan: string[] };
+
+const getFunctionUrl = (): string => {
+  const url = import.meta.env.VITE_FUNCTION_URL;
+  if (!url) {
+    throw new Error('Missing VITE_FUNCTION_URL. Set it to your Firebase function URL.');
+  }
+  return url;
+};
+
+// In-memory cache key for identical requests. Must include EVERY field that
+// changes the output (gender, includeActionPlan, ...), otherwise a changed input
+// returns a stale report. Photos are excluded (they don't affect the text).
+const computeInputHash = (input: StudentInput): string => {
+  const { studentPhoto: _photo, imageEvidence: _evidence, ...rest } = input;
+  return JSON.stringify(rest);
+};
+
+const reportCache = new Map<string, ReportResponse>();
+
+export const generateStudentReport = async (input: StudentInput): Promise<ReportResponse> => {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: { parts: promptParts },
-      config: {
-        systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            mark: { type: Type.NUMBER },
-            reportText: { type: Type.STRING },
-            actionPlan: { 
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            }
-          },
-          required: ["mark", "reportText", "actionPlan"],
-        },
+    const user = auth.currentUser;
+    if (!user) {
+      throw new ReportGenerationError('Please sign in to generate reports.', 401);
+    }
+
+    // 1. Check local session cache to save duplicate API calls & expenses
+    const cacheKey = computeInputHash(input);
+    const cached = input.imageEvidence ? undefined : reportCache.get(cacheKey);
+    if (cached) return cached;
+
+    const token = await user.getIdToken();
+    const response = await fetch(getFunctionUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify(input),
     });
 
-    // Directly access the text property as per guidelines
-    return JSON.parse(response.text || '{}');
+    if (!response.ok) {
+      const errorBody = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+      };
+      const message =
+        errorBody.error || errorBody.message || `Report generation failed (${response.status}).`;
+      throw new ReportGenerationError(message, response.status);
+    }
+
+    const result = (await response.json()) as ReportResponse;
+
+    // Store in cache for future identical requests
+    if (!input.imageEvidence && result) {
+      reportCache.set(cacheKey, result);
+    }
+
+    return result;
   } catch (error) {
-    console.error("Gemini Error:", error);
-    throw new Error("Failed to reach AI. Check your connection.");
+    console.error('Gemini Error:', error);
+    // Server responses and our own checks already carry user-facing messages.
+    if (error instanceof ReportGenerationError) throw error;
+    // Anything else (e.g. fetch's "Failed to fetch") isn't meant for teachers.
+    throw new ReportGenerationError(NETWORK_ERROR_MESSAGE);
   }
 };

@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Allow-list of profile fields the client may write. Everything else on the
+    // user doc (tier, generation_count, last_reset_date, subscriptionStatus,
+    // isSubscribed, stripeId, stripeLink, ...) is written only by Cloud Functions
+    // or the Stripe extension, which bypass these rules.
+    function onlyProfileFields(keys) {
+      return keys.hasOnly(['displayName', 'email', 'lastLogin']);
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid) && onlyProfileFields(request.resource.data.keys());
+      allow update: if isOwner(uid)
+                    && onlyProfileFields(request.resource.data.diff(resource.data).affectedKeys());
+      // Deleting the user doc would reset generation_count (free-tier bypass).
+      allow delete: if false;
+
+      match /reports/{reportId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Stripe extension (CUSTOMERS_COLLECTION=users) watches this collection.
+      match /checkout_sessions/{sessionId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid);
+        allow update, delete: if false;
+      }
+
+      match /subscriptions/{subscriptionId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
+      match /payments/{paymentId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "imagecaptioner-464205",
+    "ReportRelief": "imagecaptioner-464205"
+  },
+  "targets": {},
+  "etags": {
+    "imagecaptioner-464205": {
+      "extensionInstances": {
+        "firestore-stripe-payments": "2f498d732539404a17258c731c1580fba624f5866952b71c6d7f60ca015dcd93"
+      }
+    }
+  }
+}

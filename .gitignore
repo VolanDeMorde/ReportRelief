@@ -12,13 +12,19 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# Backups
+backups/*
+!backups/README.md
+BACKUP_MANIFEST.json
+
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Tooling caches
+.firebase/
+.venv/
+functions/lib/
+coverage/

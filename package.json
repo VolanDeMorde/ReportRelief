@@ -6,18 +6,53 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,css}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run format:check && npm run typecheck && npm run lint && npm test && npm --prefix functions run typecheck && npm --prefix functions test",
+    "deploy": "npm run check && npm run build && firebase deploy",
+    "backup": "node scripts/backup.js",
+    "firebase:login": "firebase login",
+    "firebase:init": "firebase init"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@tailwindcss/postcss": "^4.1.18",
+    "autoprefixer": "^10.4.23",
+    "firebase": "^12.8.0",
+    "papaparse": "5.4.1",
+    "postcss": "^8.5.6",
     "react": "^19.2.3",
-    "@google/genai": "^1.34.0",
     "react-dom": "^19.2.3",
-    "papaparse": "5.4.1"
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^22.14.0",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/ui": "^4.1.10",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.6",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "typescript-eslint": "^8.71.1",
+    "vite": "^6.2.0",
+    "vitest": "^4.1.10"
   }
 }
